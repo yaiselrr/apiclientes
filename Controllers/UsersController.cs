@@ -3,6 +3,8 @@ using APIClientes.Models.Dto;
 using APIClientes.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace APIClientes.Controllers
@@ -80,6 +82,75 @@ namespace APIClientes.Controllers
                 _responseDto.DisplayMessage = "Usuario Conectado";
                 return Ok(_responseDto);
             }            
+        }
+
+        // GET: api/Users
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        {
+            try
+            {
+                var listaUsers = await _userRepository.GetUsers();
+                _responseDto.Result = listaUsers;
+                _responseDto.DisplayMessage = "Lista de Users";
+
+            }
+            catch (Exception ex)
+            {
+
+                _responseDto.IsSuccess = false;
+                _responseDto.ErrorMessage = new List<string> { ex.ToString() };
+            }
+
+            return Ok(_responseDto);
+        }
+
+        // GET: api/Users/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Cliente>> GetUser(int id)
+        {
+            // VALIDO SI EL ID EXISTE
+            var user = await _userRepository.GetUserById(id);
+            if (user == null)
+            {
+                _responseDto.IsSuccess = false;
+                _responseDto.DisplayMessage = "User No Existe";
+                return NotFound(_responseDto);
+            }
+
+            _responseDto.Result = user;
+            _responseDto.DisplayMessage = "Información del User";
+            return Ok(_responseDto);
+        }
+
+        // DELETE: api/Users/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            // UTILIZAMOS TRY CATCH
+            try
+            {
+                bool userEliminado = await _userRepository.DeleteUser(id);
+                if (userEliminado)
+                {
+                    _responseDto.Result = userEliminado;
+                    _responseDto.DisplayMessage = "User Eliminado con Exito";
+                    return Ok(_responseDto);
+                }
+                else
+                {
+                    _responseDto.IsSuccess = false;
+                    _responseDto.DisplayMessage = "Error al Eliminar el User";
+                    return BadRequest(_responseDto);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                _responseDto.IsSuccess = false;
+                _responseDto.ErrorMessage = new List<string> { ex.ToString() };
+                return BadRequest(_responseDto);
+            }
         }
     }
 }

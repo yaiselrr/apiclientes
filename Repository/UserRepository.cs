@@ -1,5 +1,6 @@
 ﻿using APIClientes.Data;
 using APIClientes.Models;
+using APIClientes.Models.Dto;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,12 +20,15 @@ namespace APIClientes.Repository
 
         // VAMOS A DECLARAR UN ICONFIGURATION Y LO INICIALIZAMOS EN EL CONSTRUCTOR
         private readonly IConfiguration _configuration;// TRABAJAR CON TOKENS
+
+        private IMapper _mapper;
         
 
-        public UserRepository(ApplicationDbContext dbContext, IConfiguration configuarton)
+        public UserRepository(ApplicationDbContext dbContext, IConfiguration configuarton, IMapper mapper)
         {
             _dbContext = dbContext;
             _configuration = configuarton;
+            _mapper = mapper;
         }
         public async Task<bool> GetUser(string userName)
         {
@@ -153,5 +157,71 @@ namespace APIClientes.Repository
 
         }
 
+        public async Task<UserDto> GetUserById(int id)
+        {
+            // OBTENEMOS EL USER POR EL ID
+            User user = await _dbContext.Users.FindAsync(id);
+
+            // HACERMOS UN MAPEO PARA RETORNAR EL USERDTO pasando el OBJ user
+            return _mapper.Map<UserDto>(user);
+        }
+
+        public async Task<List<UserDto>> GetUsers()
+        {
+            // OBTENEMOS LA LISTA DE USERS
+            List<User> listaUsers = await _dbContext.Users.ToListAsync();
+
+            // HACEMOS EL MAPEO PARA RETORNAR DE TIPO USERDTO pasando la VARIABLE listaUsers
+            return _mapper.Map<List<UserDto>>(listaUsers);
+        }
+
+        public async Task<bool> DeleteUser(int id)
+        {
+            // HACEMOS EL CONTROL A TRAVES DE UN TRY CATCH
+            try
+            {
+                // VERIFICAR SI EL REGISTRO EXISTE
+                User user = await _dbContext.Users.FindAsync(id);
+                if (user == null)
+                {
+                    return false;
+                }
+                // SI EXISTE BORRAMOS EL USER
+                _dbContext.Users.Remove(user);
+                // GRABAMOS TODOS LOS CAMBIOS
+                await _dbContext.SaveChangesAsync();
+
+                return true;
+
+            }
+            catch (System.Exception)
+            {
+
+                return false;
+            }
+        }
+
+        /*public async Task<UserDto> CreateUpdate(User user, string password)
+        {
+            // VAMOS A MAPEAR PORQUE ESTAMOS RECIBIENDO UN USERDTO para llevarlo a USER
+            User user = _mapper.Map<UserDto, User>(userDto);
+
+            // VERIFICAMOS SI ES UNA ACTUALIZACION
+            if (user.Id > 0) // SI ES MAYOR QUE CERO ES UNA ACTUALIZACION
+            {
+                // ENVIAMOS TODO EL OBJETO CLIENTE
+                _dbContext.Users.Update(user);
+            }
+            else
+            {
+                // EN CASO CONTRARIO SE TRATA DE UNA CREACION DE UN NUEVO REGISTRO
+                await _dbContext.Users.AddAsync(user);
+            }
+            // GRABAMOS LOS CAMBIOS
+            await _dbContext.SaveChangesAsync();
+
+            // HACEMOS EL RETONO DE TIPO CLIENTEDTO MAPENADO
+            return _mapper.Map<User, UserDto>(user);
+        }*/
     }
 }
